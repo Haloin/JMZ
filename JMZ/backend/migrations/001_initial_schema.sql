@@ -1,6 +1,4 @@
-﻿-- Initial schema migration
--- Created: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-
+﻿
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
