@@ -1,0 +1,94 @@
+services:
+  # Backend API Service
+  type: web
+  
+  name: vidsnatch-api
+  
+  env: docker
+  
+  dockerContext: ./backend
+  dockerfilePath: ./backend/Dockerfile
+  
+  healthCheckPath: /api/health
+  
+  envVars:
+    - key: JWT_SECRET
+      generateValue: true
+    - key: DATABASE_URL
+      value: sqlite:/app/data/data.db
+    - key: NODE_ENV
+      value: production
+    - key: RUST_LOG
+      value: info
+    - key: PORT
+      value: 9000
+  
+  autoDeploy: true
+  branch: main
+  plan: free
+  
+  # Persistent disk for SQLite database
+  disk:
+    name: vidsnatch-data
+    mountPath: /app/data
+    sizeGB: 1
+
+---
+services:
+  # Frontend Web Service
+  type: web
+  
+  name: vidsnatch-web
+  
+  env: docker
+  
+  dockerContext: .
+  dockerfilePath: ./Dockerfile
+  
+  healthCheckPath: /
+  
+  envVars:
+    - key: NODE_ENV
+      value: production
+    - key: REACT_APP_API_URL
+      sync: false
+  
+  autoDeploy: true
+  branch: main
+  plan: free
+  
+  # Environment variables for connecting to API
+  envVars:
+    - key: REACT_APP_API_URL
+      value: https://vidsnatch-api.onrender.com/api
+
+---
+# Optional: Background worker for video processing
+services:
+  type: worker
+  
+  name: vidsnatch-worker
+  
+  env: docker
+  
+  dockerContext: ./backend
+  dockerfilePath: ./backend/Dockerfile
+  
+  envVars:
+    - key: JWT_SECRET
+      generateValue: true
+    - key: DATABASE_URL
+      value: sqlite:/app/data/data.db
+    - key: NODE_ENV
+      value: production
+    - key: RUST_LOG
+      value: info
+  
+  autoDeploy: true
+  branch: main
+  plan: free
+  
+  disk:
+    name: vidsnatch-worker-data
+    mountPath: /app/data
+    sizeGB: 1
