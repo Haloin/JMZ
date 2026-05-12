@@ -1,6 +1,8 @@
 ﻿use std::sync::Arc;
 use crate::models::{AppState, DownloadProgress};
 
+/// Simulates download progress for UI feedback
+/// Updates progress in real-time via WebSocket connection
 pub async fn simulate_download_progress(state: Arc<AppState>, id: String) {
     let total: u64 = 100_000_000;
     let chunks: u64 = 20;

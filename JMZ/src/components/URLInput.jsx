@@ -1,4 +1,6 @@
-﻿import { useState, useCallback, useEffect } from 'react';
+﻿// URL Input Component
+// Handles video URL validation and submission
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Link2,

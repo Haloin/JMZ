@@ -1,12 +1,16 @@
-﻿use reqwest::Client;
+﻿// YouTube video extraction module
+// Handles video info retrieval and download links
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use crate::models::{VideoInfo, VideoFormat};
 use crate::proxy::fetch_with_proxy_rotation;
 
+// YouTube API configuration
 const YOUTUBE_INNERTUBE_KEY: &str = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 const INNERTUBE_CLIENT_VERSION: &str = "2.20240101.00.00";
 const MAX_VIDEO_DURATION_SECS: u64 = 7200;
 
+/// YouTube video metadata structure
 #[derive(Debug, Serialize)]
 struct PlayerRequest {
     #[serde(rename = "videoId")]

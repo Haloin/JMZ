@@ -1,5 +1,5 @@
-﻿// Entry point for the API server
-// Add analytics module
+﻿// VidSnatch API Server Entry Point
+// Core application initialization and routing
 mod analytics;
 use analytics::{analytics_middleware, AnalyticsStore};
 mod routes;
@@ -9,6 +9,8 @@ mod extractors;
 mod download;
 mod crypto;
 mod youtube;
+mod vimeo;
+mod dailymotion;
 mod db;
 mod auth;
 mod payments;

@@ -1,4 +1,6 @@
-﻿use axum::{
+﻿// Authentication and authorization module
+// Handles JWT tokens, user registration, and login
+use axum::{
     extract::{FromRequestParts, State},
     http::{request::Parts, StatusCode},
     Json,
@@ -10,6 +12,7 @@ use std::sync::Arc;
 use crate::db::{DbPool, User};
 use crate::models::AppState;
 
+/// JWT claims structure for user authentication
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Download, Zap, Globe, Video, Shield, Lock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Hero section with animated statistics and call-to-action
 const stats = [
   { icon: Video, label: 'Videos Downloaded', value: '1M+' },
   { icon: Globe, label: 'Supported Sites', value: '50+' },

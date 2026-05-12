@@ -1,7 +1,10 @@
-﻿use axum::{
-    extract::State,
+﻿// Admin Panel Module
+// Provides user management and analytics for administrators
+use axum::{
+    extract::{State, Query},
     Json,
 };
+use serde::Deserialize;
 use std::sync::Arc;
 use tracing::{info, error};
 
@@ -9,6 +12,7 @@ use crate::models::AppState;
 use crate::auth::AuthUser;
 use crate::error::{AppError, Result};
 
+/// Admin dashboard statistics
 #[derive(serde::Serialize)]
 pub struct AdminStats {
     pub total_users: i64,
@@ -17,6 +21,26 @@ pub struct AdminStats {
     pub active_downloads: i64,
     pub users_today: i64,
     pub downloads_today: i64,
+    pub popular_sites: Vec<(String, i64)>,
+}
+
+/// User list for admin management
+#[derive(serde::Serialize)]
+pub struct AdminUser {
+    pub id: String,
+    pub email: String,
+    pub created_at: String,
+    pub last_login: Option<String>,
+    pub download_count: i64,
+    pub is_premium: bool,
+}
+
+/// Admin query parameters
+#[derive(Deserialize)]
+pub struct AdminQuery {
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+    pub search: Option<String>,
 }
 
 #[derive(serde::Serialize)]
@@ -38,6 +62,7 @@ pub struct DownloadInfo {
     pub created_at: String,
 }
 
+/// Get admin dashboard statistics
 pub async fn get_stats(
     _user: AuthUser,
     State(state): State<Arc<AppState>>,

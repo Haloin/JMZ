@@ -1,252 +1,248 @@
-﻿import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Download,
-  X,
-  CheckCircle2,
-  Clock,
-  HardDrive,
-  Zap,
-  AlertCircle,
-  Pause,
-  Trash2,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+﻿// Download Queue Component
+// Shows progress for multiple concurrent downloads
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, X, Pause, Play, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 
-import { useDownloadStore } from '../store/downloadStore';
-import { cancelDownload } from '../api/client';
+const DownloadQueue = () => {
+  const [queue, setQueue] = useState([]);
+  const [expanded, setExpanded] = useState(true);
 
-const STATUS_CONFIG = {
-  pending: { icon: Clock, color: 'text-yellow-500', label: 'Queued' },
-  downloading: { icon: Download, color: 'text-violet', label: 'Downloading' },
-  processing: { icon: Zap, color: 'text-blue-400', label: 'Processing' },
-  completed: { icon: CheckCircle2, color: 'text-green-500', label: 'Completed' },
-  error: { icon: AlertCircle, color: 'text-red-500', label: 'Failed' },
-  paused: { icon: Pause, color: 'text-yellow-500', label: 'Paused' },
-};
+  useEffect(() => {
+    // Connect to WebSocket for real-time updates
+    const ws = new WebSocket('ws://localhost:9000/api/ws');
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'progress') {
+        setQueue(prev => prev.map(item => 
+          item.id === data.id 
+            ? { ...item, progress: data.progress, status: data.status }
+            : item
+        ));
+      } else if (data.type === 'completed') {
+        setQueue(prev => prev.map(item => 
+          item.id === data.id 
+            ? { ...item, progress: 100, status: 'completed' }
+            : item
+        ));
+      } else if (data.type === 'error') {
+        setQueue(prev => prev.map(item => 
+          item.id === data.id 
+            ? { ...item, status: 'error', error: data.error }
+            : item
+        ));
+      }
+    };
 
-const formatSpeed = (speed) => {
-  if (!speed) return '';
-  if (speed > 1024 * 1024) return `${(speed / 1024 / 1024).toFixed(1)} MB/s`;
-  return `${(speed / 1024).toFixed(1)} KB/s`;
-};
+    // Load existing queue
+    fetchQueue();
 
-const formatSize = (bytes) => {
-  if (!bytes) return '';
-  if (bytes > 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-};
+    return () => ws.close();
+  }, []);
 
-const ProgressBar = ({ progress, status }) => {
-  const color =
-    status === 'completed'
-      ? 'bg-green-500'
-      : status === 'error'
-      ? 'bg-red-500'
-      : status === 'paused'
-      ? 'bg-yellow-500'
-      : 'bg-violet';
-
-  return (
-    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${progress}%` }}
-        transition={{ duration: 0.3 }}
-        className={`h-full rounded-full ${color}`}
-      />
-    </div>
-  );
-};
-
-const DownloadCard = ({ download }) => {
-  const { cancelDownload: cancelLocal, removeDownload } = useDownloadStore();
-
-  const handleCancel = async () => {
+  const fetchQueue = async () => {
     try {
-      await cancelDownload(download.id);
-      cancelLocal(download.id);
-      toast.success('Download cancelled');
-    } catch {
-      cancelLocal(download.id);
+      const response = await fetch('/api/queue');
+      const data = await response.json();
+      setQueue(data);
+    } catch (error) {
+      console.error('Failed to fetch queue:', error);
     }
   };
 
-  const cfg = STATUS_CONFIG[download.status] || STATUS_CONFIG.pending;
-  const StatusIcon = cfg.icon;
+  const removeFromQueue = async (id) => {
+    try {
+      await fetch(`/api/queue/${id}`, { method: 'DELETE' });
+      setQueue(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Failed to remove from queue:', error);
+    }
+  };
+
+  const pauseDownload = async (id) => {
+    try {
+      await fetch(`/api/queue/${id}/pause`, { method: 'POST' });
+      setQueue(prev => prev.map(item => 
+        item.id === id ? { ...item, status: 'paused' } : item
+      ));
+    } catch (error) {
+      console.error('Failed to pause download:', error);
+    }
+  };
+
+  const resumeDownload = async (id) => {
+    try {
+      await fetch(`/api/queue/${id}/resume`, { method: 'POST' });
+      setQueue(prev => prev.map(item => 
+        item.id === id ? { ...item, status: 'downloading' } : item
+      ));
+    } catch (error) {
+      console.error('Failed to resume download:', error);
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'downloading':
+        return <Download className="w-4 h-4 text-blue-400 animate-spin" />;
+      case 'completed':
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
+      case 'paused':
+        return <Pause className="w-4 h-4 text-yellow-400" />;
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-400" />;
+      default:
+        return <Download className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'downloading':
+        return 'border-blue-500 bg-blue-900/20';
+      case 'completed':
+        return 'border-green-500 bg-green-900/20';
+      case 'paused':
+        return 'border-yellow-500 bg-yellow-900/20';
+      case 'error':
+        return 'border-red-500 bg-red-900/20';
+      default:
+        return 'border-gray-500 bg-gray-900/20';
+    }
+  };
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className="glass rounded-2xl p-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gray-800 rounded-lg border border-gray-700"
     >
-      <div className="flex items-start gap-4">
-        <div className="w-24 h-16 rounded-xl bg-black-100 flex-shrink-0 overflow-hidden">
-          {download.thumbnail ? (
-            <img src={download.thumbnail} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Download className="w-6 h-6 text-secondary" />
-            </div>
-          )}
+      {/* Header */}
+      <div 
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-700"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center space-x-3">
+          <Download className="w-5 h-5 text-blue-400" />
+          <span className="font-semibold">Download Queue</span>
+          <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+            {queue.length}
+          </span>
         </div>
-
-        <div className="flex-1 min-w-0">
-          <h4 className="text-white font-medium truncate">{download.title || 'Downloadingâ€¦'}</h4>
-          <div className="flex items-center gap-3 mt-1 text-sm text-secondary">
-            <span className={`flex items-center gap-1 ${cfg.color}`}>
-              <StatusIcon className="w-4 h-4" />
-              {cfg.label}
-            </span>
-            {download.quality && (
-              <span className="px-2 py-0.5 rounded bg-white/5 text-xs">{download.quality}</span>
-            )}
-          </div>
-
-          {download.status === 'downloading' && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-xs text-secondary mb-1.5">
-                <span>{(download.progress || 0).toFixed(1)}%</span>
-                <div className="flex items-center gap-2">
-                  {download.speed > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Zap className="w-3 h-3" />
-                      {formatSpeed(download.speed)}
-                    </span>
-                  )}
-                  {download.downloadedBytes && download.totalBytes && (
-                    <span>
-                      {formatSize(download.downloadedBytes)} / {formatSize(download.totalBytes)}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <ProgressBar progress={download.progress || 0} status={download.status} />
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1">
-          {['downloading', 'pending'].includes(download.status) && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleCancel}
-              className="p-2 rounded-xl hover:bg-white/10 text-secondary hover:text-red-400 transition-colors"
-              title="Cancel"
-            >
-              <X className="w-4 h-4" />
-            </motion.button>
-          )}
-          {download.status === 'completed' && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => removeDownload(download.id)}
-              className="p-2 rounded-xl hover:bg-white/10 text-secondary hover:text-red-400 transition-colors"
-              title="Remove"
-            >
-              <Trash2 className="w-4 h-4" />
-            </motion.button>
-          )}
-        </div>
+        <motion.div
+          animate={{ rotate: expanded ? 180 : 0 }}
+          className="text-gray-400"
+        >
+          ▼
+        </motion.div>
       </div>
+
+      {/* Queue Items */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 space-y-3">
+              {queue.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Download className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No downloads in queue</p>
+                </div>
+              ) : (
+                queue.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={`p-3 rounded-lg border ${getStatusColor(item.status)}`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(item.status)}
+                        <div>
+                          <div className="font-medium text-white">{item.title}</div>
+                          <div className="text-sm text-gray-400">
+                            {item.platform} • {item.quality}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {item.status === 'downloading' && (
+                          <button
+                            onClick={() => pauseDownload(item.id)}
+                            className="p-1 hover:bg-gray-600 rounded"
+                          >
+                            <Pause className="w-4 h-4 text-yellow-400" />
+                          </button>
+                        )}
+                        {item.status === 'paused' && (
+                          <button
+                            onClick={() => resumeDownload(item.id)}
+                            className="p-1 hover:bg-gray-600 rounded"
+                          >
+                            <Play className="w-4 h-4 text-green-400" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => removeFromQueue(item.id)}
+                          className="p-1 hover:bg-gray-600 rounded"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    {item.status === 'downloading' && (
+                      <div className="mt-2">
+                        <div className="flex justify-between text-sm text-gray-400 mb-1">
+                          <span>{item.progress || 0}%</span>
+                          <span>{item.speed || '0 MB/s'}</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <motion.div
+                            className="bg-blue-500 h-2 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.progress || 0}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error Message */}
+                    {item.status === 'error' && (
+                      <div className="mt-2 text-sm text-red-400">
+                        {item.error || 'Download failed'}
+                      </div>
+                    )}
+
+                    {/* Completed */}
+                    {item.status === 'completed' && (
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-green-400">Download completed</span>
+                        <button className="text-blue-400 hover:text-blue-300 text-sm">
+                          Open File
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
-const DownloadQueue = () => {
-  const { downloads, queue, removeFromQueue } = useDownloadStore();
-
-  const activeDownloads = downloads.filter((d) =>
-    ['downloading', 'processing', 'pending'].includes(d.status)
-  );
-
-  return (
-    <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="text-center"
-      >
-        <h2 className="text-3xl md:text-4xl font-bold mb-2">
-          <span className="text-white">Download</span>{' '}
-          <span className="text-gradient">Queue</span>
-        </h2>
-        <p className="text-secondary">
-          {activeDownloads.length} active Â· {queue.length} queued
-        </p>
-      </motion.div>
-
-      {activeDownloads.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-violet" />
-            Active
-          </h3>
-          <div className="grid gap-3">
-            <AnimatePresence mode="popLayout">
-              {activeDownloads.map((d) => (
-                <DownloadCard key={d.id} download={d} />
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-      )}
-
-      {queue.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-yellow-500" />
-            Waiting ({queue.length})
-          </h3>
-          <div className="glass rounded-2xl p-4 space-y-2">
-            {queue.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center justify-between p-3 rounded-xl bg-white/5"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs text-secondary">
-                    {index + 1}
-                  </span>
-                  <span className="text-sm text-secondary truncate max-w-sm">{item.url}</span>
-                </div>
-                <button
-                  onClick={() => removeFromQueue(item.id)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-secondary hover:text-red-400 transition-colors"
-                  aria-label="Remove from queue"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeDownloads.length === 0 && queue.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-16"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <HardDrive className="w-8 h-8 text-secondary" />
-          </div>
-          <p className="text-secondary">No active downloads</p>
-          <p className="text-sm text-secondary/60 mt-1">Paste a URL above to get started</p>
-        </motion.div>
-      )}
-    </div>
-  );
-};
-
 export default DownloadQueue;
-
-
