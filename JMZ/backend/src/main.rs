@@ -1,5 +1,4 @@
-﻿// VidSnatch API Server Entry Point
-// Core application initialization and routing
+﻿
 mod analytics;
 use analytics::{analytics_middleware, AnalyticsStore};
 mod routes;
