@@ -26,7 +26,7 @@ pub async fn analytics_middleware(
     let endpoint = request.uri().path().to_string();
     let method = request.method().to_string();
     
-    // Extract user info if available
+    
     let user_id = request.headers()
         .get("x-user-id")
         .and_then(|v| v.to_str().ok())
@@ -47,7 +47,7 @@ pub async fn analytics_middleware(
     let duration = start.elapsed();
     let status_code = response.status().as_u16();
 
-    // Log analytics event
+   
     info!(
         endpoint = %endpoint,
         method = %method,
@@ -57,13 +57,12 @@ pub async fn analytics_middleware(
         "API request"
     );
 
-    // In production, send to analytics service (e.g., Mixpanel, Amplitude, or custom DB)
-    // Example: analytics_service.track(event).await;
+   
 
     response
 }
 
-// Basic usage statistics store
+
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
@@ -101,7 +100,7 @@ impl AnalyticsStore {
                 stats.error_count += 1;
             }
             
-            // Update rolling average
+            
             let n = stats.total_requests as f64;
             stats.avg_response_time_ms = 
                 (stats.avg_response_time_ms * (n - 1.0) + duration_ms as f64) / n;
