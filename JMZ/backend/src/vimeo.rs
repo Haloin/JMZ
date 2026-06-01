@@ -1,14 +1,13 @@
-// Vimeo video extraction module
-// Handles video info retrieval and download links
+
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use crate::models::{VideoInfo, VideoFormat};
 use crate::proxy::fetch_with_proxy_rotation;
 
 const VIMEO_API_BASE: &str = "https://vimeo.com/api/oembed.json";
-const MAX_VIDEO_DURATION_SECS: u64 = 7200; // 2 hours max
+const MAX_VIDEO_DURATION_SECS: u64 = 7200; 
 
-/// Vimeo video metadata structure
+
 #[derive(Debug, Deserialize)]
 struct VimeoOEmbed {
     title: String,
@@ -18,20 +17,20 @@ struct VimeoOEmbed {
     upload_date: String,
 }
 
-/// Extract video information from Vimeo URL
+
 pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::error::Error>> {
     let client = Client::new();
     
-    // Extract video ID from URL
+    
     let video_id = extract_vimeo_id(url)?;
     
-    // Get video metadata via oEmbed
+    
     let oembed_url = format!("{}?url=https://vimeo.com/{}", VIMEO_API_BASE, video_id);
     
     let response = fetch_with_proxy_rotation(&client, &oembed_url).await?;
     let oembed: VimeoOEmbed = serde_json::from_str(&response)?;
     
-    // Validate video duration
+  
     if let Some(duration) = oembed.duration {
         if duration > MAX_VIDEO_DURATION_SECS {
             return Err("Video too long".into());
@@ -44,7 +43,7 @@ pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::err
             quality: "720p".to_string(),
             fps: 30,
             ext: "mp4".to_string(),
-            file_size: Some(25_000_000), // ~25MB
+            file_size: Some(25_000_000), 
             download_url: format!("https://vimeo.com/{}/download?quality=720p", video_id),
         },
         VideoFormat {
@@ -52,7 +51,7 @@ pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::err
             quality: "360p".to_string(),
             fps: 30,
             ext: "mp4".to_string(),
-            file_size: Some(10_000_000), // ~10MB
+            file_size: Some(10_000_000), 
             download_url: format!("https://vimeo.com/{}/download?quality=360p", video_id),
         },
     ];
@@ -70,7 +69,7 @@ pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::err
     })
 }
 
-/// Extract Vimeo video ID from URL
+
 fn extract_vimeo_id(url: &str) -> Result<String, Box<dyn std::error::Error>> {
     let patterns = vec![
         r"vimeo\.com/(\d+)",
