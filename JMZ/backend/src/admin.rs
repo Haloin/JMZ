@@ -1,5 +1,4 @@
-﻿// Admin Panel Module
-// Provides user management and analytics for administrators
+﻿
 use axum::{
     extract::{State, Query},
     Json,
@@ -12,7 +11,7 @@ use crate::models::AppState;
 use crate::auth::AuthUser;
 use crate::error::{AppError, Result};
 
-/// Admin dashboard statistics
+
 #[derive(serde::Serialize)]
 pub struct AdminStats {
     pub total_users: i64,
@@ -24,7 +23,7 @@ pub struct AdminStats {
     pub popular_sites: Vec<(String, i64)>,
 }
 
-/// User list for admin management
+
 #[derive(serde::Serialize)]
 pub struct AdminUser {
     pub id: String,
@@ -35,7 +34,7 @@ pub struct AdminUser {
     pub is_premium: bool,
 }
 
-/// Admin query parameters
+
 #[derive(Deserialize)]
 pub struct AdminQuery {
     pub page: Option<u32>,
@@ -62,18 +61,15 @@ pub struct DownloadInfo {
     pub created_at: String,
 }
 
-/// Get admin dashboard statistics
 pub async fn get_stats(
     _user: AuthUser,
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<AdminStats>> {
-    // Verify admin access
-    // In production, check if user has admin role
+    
     
     info!("Admin stats requested by: {}", _user.email);
     
-    // Mock data - in production, query actual database
-    let stats = AdminStats {
+    
         total_users: 1247,
         total_downloads: 8934,
         total_revenue: 12580.50,
@@ -90,8 +86,7 @@ pub async fn get_users(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<UserInfo>>> {
     info!("Admin users list requested by: {}", _user.email);
-    
-    // Mock data - in production, query actual database
+  
     let users = vec![
         UserInfo {
             id: "1".to_string(),
@@ -118,7 +113,7 @@ pub async fn get_downloads(
 ) -> Result<Json<Vec<DownloadInfo>>> {
     info!("Admin downloads list requested by: {}", _user.email);
     
-    // Mock data - in production, query actual database
+    
     let downloads = vec![
         DownloadInfo {
             id: "1".to_string(),
