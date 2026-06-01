@@ -1,4 +1,4 @@
-﻿s
+﻿
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use crate::models::{VideoInfo, VideoFormat};
