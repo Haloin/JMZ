@@ -1,5 +1,4 @@
-// Admin Dashboard Component
-// Provides user management and analytics for administrators
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, TrendingUp, DollarSign, Download, Activity, Search, Filter } from 'lucide-react';
