@@ -1,5 +1,5 @@
 ﻿
--- Users table
+
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Downloads table
+
 CREATE TABLE IF NOT EXISTS downloads (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS downloads (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -40,7 +39,6 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_downloads_user_id ON downloads(user_id);
 CREATE INDEX IF NOT EXISTS idx_downloads_status ON downloads(status);
