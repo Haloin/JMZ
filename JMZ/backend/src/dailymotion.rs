@@ -1,14 +1,13 @@
-// Dailymotion video extraction module
-// Handles video info retrieval and download links
+
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use crate::models::{VideoInfo, VideoFormat};
 use crate::proxy::fetch_with_proxy_rotation;
 
 const DAILYMOTION_API_BASE: &str = "https://www.dailymotion.com/services/oembed";
-const MAX_VIDEO_DURATION_SECS: u64 = 7200; // 2 hours max
+const MAX_VIDEO_DURATION_SECS: u64 = 7200; 
 
-/// Dailymotion video metadata structure
+
 #[derive(Debug, Deserialize)]
 struct DailymotionOEmbed {
     title: String,
@@ -18,20 +17,20 @@ struct DailymotionOEmbed {
     upload_date: String,
 }
 
-/// Extract video information from Dailymotion URL
+
 pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::error::Error>> {
     let client = Client::new();
     
-    // Extract video ID from URL
+   
     let video_id = extract_dailymotion_id(url)?;
     
-    // Get video metadata via oEmbed
+
     let oembed_url = format!("{}?url=https://dailymotion.com/video/{}", DAILYMOTION_API_BASE, video_id);
     
     let response = fetch_with_proxy_rotation(&client, &oembed_url).await?;
     let oembed: DailymotionOEmbed = serde_json::from_str(&response)?;
     
-    // Validate video duration
+    
     if let Some(duration) = oembed.duration {
         if duration > MAX_VIDEO_DURATION_SECS {
             return Err("Video too long".into());
@@ -44,7 +43,7 @@ pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::err
             quality: "720p".to_string(),
             fps: 30,
             ext: "mp4".to_string(),
-            file_size: Some(20_000_000), // ~20MB
+            file_size: Some(20_000_000), 
             download_url: format!("https://www.dailymotion.com/video/{}/download?quality=720", video_id),
         },
         VideoFormat {
@@ -52,7 +51,7 @@ pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::err
             quality: "480p".to_string(),
             fps: 30,
             ext: "mp4".to_string(),
-            file_size: Some(12_000_000), // ~12MB
+            file_size: Some(12_000_000), 
             download_url: format!("https://www.dailymotion.com/video/{}/download?quality=480", video_id),
         },
         VideoFormat {
@@ -60,7 +59,7 @@ pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::err
             quality: "360p".to_string(),
             fps: 30,
             ext: "mp4".to_string(),
-            file_size: Some(8_000_000), // ~8MB
+            file_size: Some(8_000_000), 
             download_url: format!("https://www.dailymotion.com/video/{}/download?quality=360", video_id),
         },
     ];
@@ -78,7 +77,7 @@ pub async fn extract_video_info(url: &str) -> Result<VideoInfo, Box<dyn std::err
     })
 }
 
-/// Extract Dailymotion video ID from URL
+
 fn extract_dailymotion_id(url: &str) -> Result<String, Box<dyn std::error::Error>> {
     let patterns = vec![
         r"dailymotion\.com/video/([a-zA-Z0-9]+)",
