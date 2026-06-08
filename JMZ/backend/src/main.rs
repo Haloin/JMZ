@@ -1,4 +1,4 @@
-﻿
+
 mod analytics;
 use analytics::{analytics_middleware, AnalyticsStore};
 mod routes;
@@ -16,7 +16,6 @@ mod payments;
 mod storage;
 mod proxy;
 mod admin;
-
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -30,7 +29,6 @@ use tower_http::compression::CompressionLayer;
 use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
 use tracing_subscriber::EnvFilter;
-
 use crate::models::AppState;
 use crate::routes::{health, extract, download, progress, cancel, history, formats, stream};
 use crate::handlers::{ws_handler, request_logger};
@@ -148,7 +146,4 @@ async fn shutdown_signal() {
         _ = terminate => {},
     }
 }
-
-
-
 
